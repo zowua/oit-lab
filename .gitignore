@@ -1,0 +1,12 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor state
+.vscode/
+
+# Logs and local scratch files
+*.log
+*.tmp
+*.temp
+*.local

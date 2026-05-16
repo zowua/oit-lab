@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OIT Lab</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: sans-serif; color: white; }
+        canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; outline: none; }
+        #ppllCanvas { display: none; }
+        #ui-panel {
+            position: absolute;
+            top: 20px; left: 20px;
+            background: rgba(24, 26, 30, 0.92);
+            padding: 16px; border-radius: 8px;
+            border: 1px solid #3b414a;
+            backdrop-filter: blur(5px);
+            width: 380px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.38);
+            z-index: 10;
+        }
+        #ui-panel h3 { margin: 0 0 14px; font-size: 16px; font-weight: 700; letter-spacing: 0; }
+        .panel-section { border-top: 1px solid #343a43; padding-top: 12px; margin-top: 12px; }
+        .panel-section:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+        .section-title { color: #9ea7b3; font-size: 11px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0; }
+        .control-group { margin-bottom: 12px; }
+        .control-group:last-child { margin-bottom: 0; }
+        label { display: block; font-size: 13px; margin-bottom: 5px; font-weight: bold; }
+        .hint { font-size: 12px; color: #aab2bd; margin-bottom: 5px; line-height: 1.35; }
+        .mode-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+        .mode-option {
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 7px 6px;
+            border: 1px solid #48505a;
+            border-radius: 6px;
+            background: #2f343b;
+            color: #d5dbe3;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.15;
+            user-select: none;
+        }
+        .mode-option input { position: absolute; opacity: 0; pointer-events: none; }
+        .mode-option.active { background: #0b66d8; border-color: #66d9ff; color: #fff; }
+        .mode-settings-panel { display: none; }
+        .mode-settings-panel.active { display: block; }
+        .segmented-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+        .segmented-option {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 32px;
+            border: 1px solid #48505a;
+            border-radius: 6px;
+            background: #2f343b;
+            color: #d5dbe3;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .segmented-option input { position: absolute; opacity: 0; pointer-events: none; }
+        .segmented-option.active { border-color: #66d9ff; background: #214a74; color: #fff; }
+        .toggle-line { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+        .toggle-line input { margin: 0; }
+        .diagnostics-grid { display: grid; gap: 6px; }
+        .diagnostic-row { display: grid; grid-template-columns: 94px minmax(0, 1fr); gap: 8px; align-items: baseline; font-size: 12px; line-height: 1.3; }
+        .diagnostic-row .label { color: #9ea7b3; font-weight: 700; }
+        .diagnostic-row .value { color: #e1e7ef; overflow-wrap: anywhere; }
+        .mini-bar { position: relative; height: 14px; border: 1px solid #48505a; border-radius: 4px; overflow: hidden; background: #20242a; }
+        .mini-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #1fb6ff, #47d16c); }
+        .mini-bar-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700; }
+        input[type="range"] { width: 100%; accent-color: #1fb6ff; }
+        input[type="range"]::-webkit-slider-runnable-track { height: 5px; border-radius: 999px; background: #d9e0e8; }
+        input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; margin-top: -6.5px; border-radius: 50%; background: #1fb6ff; border: 2px solid #d8f4ff; box-shadow: 0 1px 5px rgba(0,0,0,0.35); }
+        input[type="range"]::-moz-range-track { height: 5px; border-radius: 999px; background: #d9e0e8; }
+        input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #1fb6ff; border: 2px solid #d8f4ff; box-shadow: 0 1px 5px rgba(0,0,0,0.35); }
+        input[type="file"] { width: 100%; font-size: 12px; color: #d5dbe3; }
+        input[type="file"]::file-selector-button { margin-right: 10px; border: 1px solid #4b5563; border-radius: 6px; background: #2f343b; color: #e1e7ef; padding: 6px 10px; font-weight: 700; cursor: pointer; }
+        input[type="file"]::file-selector-button:hover { background: #3a424d; }
+        button { background: #0b66d8; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 7px; font-weight: 700; }
+        button:hover { background: #0958ba; }
+        button:disabled { background: #555; cursor: default; }
+        #status { font-size: 11px; color: #aab2bd; min-height: 15px; line-height: 1.35; margin-top: 8px; }
+    </style>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+</head>
+<body>
+    <canvas id="babylonCanvas"></canvas>
+    <canvas id="ppllCanvas"></canvas>
+
+    <div id="ui-panel">
+        <h3>OIT Lab</h3>
+
+        <div class="panel-section">
+            <div class="section-title">Render Mode</div>
+            <div class="mode-tabs">
+                <label class="mode-option active" data-mode-option="conventional">
+                    <input type="radio" id="conventionalToggle" name="renderMode" value="conventional" checked>
+                    Conventional
+                </label>
+                <label class="mode-option" data-mode-option="weighted">
+                    <input type="radio" id="weightedOitToggle" name="renderMode" value="weighted">
+                    Weighted OIT
+                </label>
+                <label class="mode-option" data-mode-option="ppll">
+                    <input type="radio" id="ppllToggle" name="renderMode" value="ppll">
+                    PPLL
+                </label>
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <div class="section-title">Settings</div>
+            <div class="control-group">
+                <label class="toggle-line">
+                    <input type="checkbox" id="autoRotateToggle">
+                    Auto Rotate
+                </label>
+            </div>
+            <div class="control-group">
+                <label>Alpha Multiplier</label>
+                <input type="range" id="alphaMultiplier" min="0" max="2" step="0.01" value="1">
+                <div class="hint"><span id="alphaMultiplierValue">1.00</span>x transparent mesh alpha.</div>
+            </div>
+            <div class="mode-settings-panel active" data-mode-panel="conventional">
+                <div class="control-group">
+                    <label class="toggle-line">
+                        <input type="checkbox" id="depthWriteToggle">
+                        Enable Depth Write
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label>Draw Order</label>
+                    <div class="segmented-row">
+                        <label class="segmented-option" data-draw-option="incorrect">
+                            <input type="radio" name="drawOrder" value="incorrect">
+                            Front-to-Back
+                        </label>
+                        <label class="segmented-option active" data-draw-option="correct">
+                            <input type="radio" name="drawOrder" value="correct" checked>
+                            Back-to-Front
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mode-settings-panel" data-mode-panel="weighted">
+                <div class="diagnostics-grid">
+                    <div class="diagnostic-row"><span class="label">Buffers</span><span class="value">Opaque + accum + reveal</span></div>
+                    <div class="diagnostic-row"><span class="label">Sorting</span><span class="value">Approximate</span></div>
+                </div>
+            </div>
+
+            <div class="mode-settings-panel" data-mode-panel="ppll">
+                <div class="control-group">
+                    <label>Max Nodes Per Pixel</label>
+                    <input type="range" id="nodeBudget" min="4" max="24" step="4" value="12" style="width: 100%;">
+                    <div class="hint"><span id="nodeBudgetValue">12</span> requested nodes/pixel.</div>
+                </div>
+                <div class="diagnostic-row"><span class="label">Effective</span><span class="value" id="diagnosticEffectiveBudget">12 nodes/pixel</span></div>
+                <div class="diagnostic-row"><span class="label">Node Use</span><span class="value"><div class="mini-bar"><div class="mini-bar-fill" id="diagnosticNodeFill"></div><span class="mini-bar-text" id="diagnosticNodePercent">0%</span></div></span></div>
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <div class="section-title">Diagnostics</div>
+            <div class="diagnostics-grid">
+                <div class="diagnostic-row"><span class="label">Scene</span><span class="value" id="diagnosticScene">Default scene</span></div>
+                <div class="diagnostic-row"><span class="label">Mode</span><span class="value" id="diagnosticMode">Conventional</span></div>
+                <div class="diagnostic-row"><span class="label">Canvas</span><span class="value" id="diagnosticCanvas">-</span></div>
+                <div class="diagnostic-row"><span class="label">GPU Memory</span><span class="value" id="diagnosticMemory">-</span></div>
+                <div class="diagnostic-row"><span class="label">Fragments</span><span class="value" id="diagnosticFragments">-</span></div>
+                <div class="diagnostic-row"><span class="label">FPS</span><span class="value" id="diagnosticFps">-</span></div>
+                <div class="diagnostic-row"><span class="label">CPU</span><span class="value" id="diagnosticCpuMs">-</span></div>
+                <div class="diagnostic-row"><span class="label">GPU</span><span class="value" id="diagnosticGpuMs">-</span></div>
+            </div>
+            <div id="status">Initializing Babylon WebGPU...</div>
+        </div>
+
+        <div class="panel-section">
+            <div class="section-title">Model</div>
+            <input type="file" id="fileInput" accept=".glb,.gltf">
+            <button id="resetBtn">Reset to Default Scene</button>
+        </div>
+    </div>
+
+    <script>
+        const babylonCanvas = document.getElementById('babylonCanvas');
+        const ppllCanvas = document.getElementById('ppllCanvas');
+        const statusEl = document.getElementById('status');
+        const conventionalToggle = document.getElementById('conventionalToggle');
+        const depthWriteToggle = document.getElementById('depthWriteToggle');
+        const autoRotateToggle = document.getElementById('autoRotateToggle');
+        const ppllToggle = document.getElementById('ppllToggle');
+        const weightedOitToggle = document.getElementById('weightedOitToggle');
+        const alphaMultiplier = document.getElementById('alphaMultiplier');
+        const alphaMultiplierValue = document.getElementById('alphaMultiplierValue');
+        const nodeBudget = document.getElementById('nodeBudget');
+        const nodeBudgetValue = document.getElementById('nodeBudgetValue');
+        const diagnosticScene = document.getElementById('diagnosticScene');
+        const diagnosticMode = document.getElementById('diagnosticMode');
+        const diagnosticCanvas = document.getElementById('diagnosticCanvas');
+        const diagnosticMemory = document.getElementById('diagnosticMemory');
+        const diagnosticFragments = document.getElementById('diagnosticFragments');
+        const diagnosticFps = document.getElementById('diagnosticFps');
+        const diagnosticCpuMs = document.getElementById('diagnosticCpuMs');
+        const diagnosticGpuMs = document.getElementById('diagnosticGpuMs');
+        const diagnosticEffectiveBudget = document.getElementById('diagnosticEffectiveBudget');
+        const diagnosticNodeFill = document.getElementById('diagnosticNodeFill');
+        const diagnosticNodePercent = document.getElementById('diagnosticNodePercent');
+        const fileInput = document.getElementById('fileInput');
+        const resetBtn = document.getElementById('resetBtn');
+
+        const transparentMeshes = [];
+        let babylonEngine = null;
+        let babylonScene = null;
+        let babylonCamera = null;
+        let rawRenderer = null;
+        let currentObjectRoot = null;
+        let currentMeshMode = 'default';
+        let currentSceneLabel = 'Default scene';
+        let modelRotation = 0;
+        let lastAutoRotateTime = 0;
+        const autoRotateRadiansPerSecond = 0.45;
+        const linearClearColor = 0.133;
+        const canvasClearColor = linearToSrgbComponent(linearClearColor);
+
+        const orbit = {
+            alpha: Math.atan2(3, 5),
+            beta: Math.acos(2 / Math.hypot(3, 2, 5)),
+            radius: Math.hypot(3, 2, 5),
+            target: [0, 0, 0]
+        };
+
+        function setStatus(text) {
+            statusEl.textContent = text;
+        }
+
+        function linearToSrgbComponent(value) {
+            return value <= 0.0031308 ? value * 12.92 : 1.055 * Math.pow(value, 1 / 2.4) - 0.055;
+        }
+
+        function getTransparencyMode() {
+            if (ppllToggle.checked) return 'ppll';
+            if (weightedOitToggle.checked) return 'weighted';
+            return 'conventional';
+        }
+
+        function getModeLabel(mode) {
+            if (mode === 'ppll') return 'PPLL';
+            if (mode === 'weighted') return 'Weighted OIT';
+            return 'Conventional';
+        }
+
+        function syncPanelState() {
+            const mode = getTransparencyMode();
+            conventionalToggle.checked = mode === 'conventional';
+            weightedOitToggle.checked = mode === 'weighted';
+            ppllToggle.checked = mode === 'ppll';
+
+            document.querySelectorAll('[data-mode-option]').forEach((option) => {
+                option.classList.toggle('active', option.dataset.modeOption === mode);
+            });
+            document.querySelectorAll('[data-mode-panel]').forEach((panel) => {
+                panel.classList.toggle('active', panel.dataset.modePanel === mode);
+            });
+
+            const drawOrder = document.querySelector('input[name="drawOrder"]:checked')?.value || 'correct';
+            document.querySelectorAll('[data-draw-option]').forEach((option) => {
+                option.classList.toggle('active', option.dataset.drawOption === drawOrder);
+            });
+        }
+
+        function isRawRendererEnabled() {
+            return true;
+        }
+
+        function isOitModeEnabled() {
+            return getTransparencyMode() !== 'conventional';
+        }
+
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
+        function getAlphaMultiplier() {
+            return clamp(Number(alphaMultiplier.value) || 0, 0, 2);
+        }
+
+        function normalize(v) {
+            const length = Math.hypot(v[0], v[1], v[2]) || 1;
+            return [v[0] / length, v[1] / length, v[2] / length];
+        }
+
+        function subtract(a, b) {
+            return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+        }
+
+        function cross(a, b) {
+            return [
+                a[1] * b[2] - a[2] * b[1],
+                a[2] * b[0] - a[0] * b[2],
+                a[0] * b[1] - a[1] * b[0]
+            ];
+        }
+
+        function dot(a, b) {
+            return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+        }
+
+        function multiplyMat4(a, b) {
+            const out = new Float32Array(16);
+
+            for (let c = 0; c < 4; c++) {
+                for (let r = 0; r < 4; r++) {
+                    out[c * 4 + r] =
+                        a[0 * 4 + r] * b[c * 4 + 0] +
+                        a[1 * 4 + r] * b[c * 4 + 1] +
+                        a[2 * 4 + r] * b[c * 4 + 2] +
+                        a[3 * 4 + r] * b[c * 4 + 3];
+                }
+            }
+
+            return out;
+        }
+
+        function perspective(fovy, aspect, near, far) {
+            const f = 1 / Math.tan(fovy / 2);
+            const out = new Float32Array(16);
+            out[0] = f / aspect;
+            out[5] = f;
+            out[10] = far / (near - far);
+            out[11] = -1;
+            out[14] = (far * near) / (near - far);
+            return out;
+        }
+
+        function lookAt(eye, target, up) {
+            const z = normalize(subtract(eye, target));
+            const x = normalize(cross(up, z));
+            const y = cross(z, x);
+            const out = new Float32Array(16);
+            out[0] = x[0]; out[1] = x[1]; out[2] = x[2]; out[3] = 0;
+            out[4] = y[0]; out[5] = y[1]; out[6] = y[2]; out[7] = 0;
+            out[8] = z[0]; out[9] = z[1]; out[10] = z[2]; out[11] = 0;
+            out[12] = -dot(x, eye); out[13] = -dot(y, eye); out[14] = -dot(z, eye); out[15] = 1;
+            return out;
+        }
+
+        function getCameraEye() {
+            if (babylonCamera) {
+                const position = babylonCamera.position;
+                return [position.x, position.y, position.z];
+            }
+
+            const sinBeta = Math.sin(orbit.beta);
+            return [
+                orbit.target[0] + orbit.radius * sinBeta * Math.cos(orbit.alpha),
+                orbit.target[1] + orbit.radius * Math.cos(orbit.beta),
+                orbit.target[2] + orbit.radius * sinBeta * Math.sin(orbit.alpha)
+            ];
+        }
+
+        function syncBabylonCamera() {
+            if (!babylonCamera) return;
+            babylonCamera.alpha = orbit.alpha;
+            babylonCamera.beta = orbit.beta;
+            babylonCamera.radius = orbit.radius;
+            babylonCamera.target.set(orbit.target[0], orbit.target[1], orbit.target[2]);
+        }
+
+        function updateAutoRotate(timestamp) {
+            if (!autoRotateToggle.checked) {
+                lastAutoRotateTime = timestamp;
+                return;
+            }
+
+            if (!lastAutoRotateTime) lastAutoRotateTime = timestamp;
+            const deltaSeconds = Math.min(0.05, Math.max(0, (timestamp - lastAutoRotateTime) / 1000));
+            lastAutoRotateTime = timestamp;
+            modelRotation += deltaSeconds * autoRotateRadiansPerSecond;
+        }
+
+        function rotateModelPoint(point, shouldRotate = true) {
+            if (!shouldRotate) return point;
+
+            const cosRotation = Math.cos(modelRotation);
+            const sinRotation = Math.sin(modelRotation);
+            return [
+                point[0] * cosRotation + point[2] * sinRotation,
+                point[1],
+                -point[0] * sinRotation + point[2] * cosRotation
+            ];
+        }
+
+        function attachOrbitControls(canvas) {
+            let pointerDown = false;
+            let lastX = 0;
+            let lastY = 0;
+
+            canvas.addEventListener('pointerdown', (event) => {
+                if (event.target !== canvas) return;
+                pointerDown = true;
+                lastX = event.clientX;
+                lastY = event.clientY;
+                canvas.setPointerCapture(event.pointerId);
+            });
+
+            canvas.addEventListener('pointermove', (event) => {
+                if (!pointerDown) return;
+
+                const dx = event.clientX - lastX;
+                const dy = event.clientY - lastY;
+                lastX = event.clientX;
+                lastY = event.clientY;
+
+                orbit.alpha -= dx * 0.006;
+                orbit.beta = clamp(orbit.beta + dy * 0.006, 0.08, Math.PI - 0.08);
+                syncBabylonCamera();
+            });
+
+            canvas.addEventListener('pointerup', (event) => {
+                pointerDown = false;
+                if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+            });
+
+            canvas.addEventListener('wheel', (event) => {
+                event.preventDefault();
+                orbit.radius = clamp(orbit.radius * Math.exp(event.deltaY * 0.001), 1.5, 30);
+                syncBabylonCamera();
+            }, { passive: false });
+        }
+
+        function interleaveGeometry(positions, normals) {
+            const vertices = new Float32Array((positions.length / 3) * 6);
+
+            for (let i = 0, v = 0; i < positions.length; i += 3, v += 6) {
+                vertices[v] = positions[i];
+                vertices[v + 1] = positions[i + 1];
+                vertices[v + 2] = positions[i + 2];
+                vertices[v + 3] = normals[i];
+                vertices[v + 4] = normals[i + 1];
+                vertices[v + 5] = normals[i + 2];
+            }
+
+            return vertices;
+        }
+
+        function createCubeGeometry(size, center) {
+            const half = size / 2;
+            const faces = [
+                [[1, 0, 0], [[half, -half, -half], [half, half, -half], [half, half, half], [half, -half, half]]],
+                [[-1, 0, 0], [[-half, -half, half], [-half, half, half], [-half, half, -half], [-half, -half, -half]]],
+                [[0, 1, 0], [[-half, half, -half], [-half, half, half], [half, half, half], [half, half, -half]]],
+                [[0, -1, 0], [[-half, -half, half], [-half, -half, -half], [half, -half, -half], [half, -half, half]]],
+                [[0, 0, 1], [[-half, -half, half], [half, -half, half], [half, half, half], [-half, half, half]]],
+                [[0, 0, -1], [[half, -half, -half], [-half, -half, -half], [-half, half, -half], [half, half, -half]]]
+            ];
+            const positions = [];
+            const normals = [];
+            const indices = [];
+
+            faces.forEach(([normal, corners]) => {
+                const base = positions.length / 3;
+                corners.forEach((corner) => {
+                    positions.push(corner[0] + center[0], corner[1] + center[1], corner[2] + center[2]);
+                    normals.push(normal[0], normal[1], normal[2]);
+                });
+                indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+            });
+
+            return { vertices: interleaveGeometry(positions, normals), indices: new Uint32Array(indices) };
+        }
+
+        function createSphereGeometry(radius, center, rings = 32, segments = 48) {
+            const positions = [];
+            const normals = [];
+            const indices = [];
+
+            for (let y = 0; y <= rings; y++) {
+                const v = y / rings;
+                const phi = v * Math.PI;
+                const sinPhi = Math.sin(phi);
+                const cosPhi = Math.cos(phi);
+
+                for (let x = 0; x <= segments; x++) {
+                    const u = x / segments;
+                    const theta = u * Math.PI * 2;
+                    const nx = Math.cos(theta) * sinPhi;
+                    const ny = cosPhi;
+                    const nz = Math.sin(theta) * sinPhi;
+                    positions.push(center[0] + nx * radius, center[1] + ny * radius, center[2] + nz * radius);
+                    normals.push(nx, ny, nz);
+                }
+            }
+
+            for (let y = 0; y < rings; y++) {
+                for (let x = 0; x < segments; x++) {
+                    const a = y * (segments + 1) + x;
+                    const b = a + segments + 1;
+                    indices.push(a, b, a + 1, b, b + 1, a + 1);
+                }
+            }
+
+            return { vertices: interleaveGeometry(positions, normals), indices: new Uint32Array(indices) };
+        }
+
+        function createPlaneGeometry(size, z) {
+            const half = size / 2;
+            const positions = [-half, -half, z, half, -half, z, half, half, z, -half, half, z];
+            const normals = [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1];
+            return { vertices: interleaveGeometry(positions, normals), indices: new Uint32Array([0, 1, 2, 0, 2, 3]) };
+        }
+
+        function appendQuad(positions, normals, indices, corners, normal) {
+            const base = positions.length / 3;
+            corners.forEach((corner) => {
+                positions.push(corner[0], corner[1], corner[2]);
+                normals.push(normal[0], normal[1], normal[2]);
+            });
+            indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+        }
+
+        function createGridGeometry(size = 10, divisions = 10, y = -1.5, thickness = 0.012) {
+            const half = size / 2;
+            const positions = [];
+            const normals = [];
+            const indices = [];
+            const step = size / divisions;
+
+            for (let i = 0; i <= divisions; i++) {
+                const p = -half + i * step;
+                appendQuad(positions, normals, indices, [
+                    [-half, y, p - thickness], [half, y, p - thickness], [half, y, p + thickness], [-half, y, p + thickness]
+                ], [0, 1, 0]);
+                appendQuad(positions, normals, indices, [
+                    [p - thickness, y, -half], [p + thickness, y, -half], [p + thickness, y, half], [p - thickness, y, half]
+                ], [0, 1, 0]);
+            }
+
+            return { vertices: interleaveGeometry(positions, normals), indices: new Uint32Array(indices) };
+        }
+
+        function getDefaultRawMeshes() {
+            return {
+                opaque: [
+                    { name: 'Wall', color: [0.55, 0.55, 0.55, 1], geometry: createPlaneGeometry(10, -2) },
+                    { name: 'Grid', color: [0.22, 0.22, 0.22, 1], geometry: createGridGeometry() }
+                ],
+                transparent: [
+                    { name: 'Blue Cube', color: [0.0, 0.33, 1.0, 0.6], geometry: createCubeGeometry(1.5, [0.5, 0, -0.5]) },
+                    { name: 'Red Sphere', color: [1.0, 0.07, 0.07, 0.6], geometry: createSphereGeometry(1, [-0.5, 0.2, 0.8]) }
+                ]
+            };
+        }
+
+        class OitLabRenderer {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.device = null;
+                this.context = null;
+                this.canvasFormat = null;
+                this.maxStorageBufferBindingSize = 128 * 1024 * 1024;
+                this.safeColorBufferBytes = 96 * 1024 * 1024;
+                this.maxRenderPixels = 900000;
+                this.width = 1;
+                this.height = 1;
+                this.nodeBudget = Number(nodeBudget.value);
+                this.effectiveNodeBudget = this.nodeBudget;
+                this.maxNodes = 1;
+                this.lastNodeCount = null;
+                this.lastCounterReadTime = 0;
+                this.counterReadPending = false;
+                this.counterMapInFlight = false;
+                this.pendingCounterReadBuffer = null;
+                this.timestampQueriesEnabled = false;
+                this.timestampQuerySet = null;
+                this.timestampResolveBuffer = null;
+                this.timestampReadBuffer = null;
+                this.gpuTimingPending = false;
+                this.gpuTimingMapInFlight = false;
+                this.gpuTimingMode = 'none';
+                this.lastGpuTimingTime = 0;
+                this.lastGpuMs = null;
+                this.fpsAverage = null;
+                this.cpuMsAverage = null;
+                this.lastFrameStart = 0;
+                this.lastPerformanceUiTime = 0;
+                this.performanceMode = null;
+                this.opaqueMeshes = [];
+                this.transparentMeshes = [];
+            }
+
+            async init() {
+                if (!navigator.gpu) {
+                    throw new Error('WebGPU is not available in this browser.');
+                }
+
+                const adapter = await navigator.gpu.requestAdapter();
+                if (!adapter) throw new Error('No WebGPU adapter was found.');
+
+                this.timestampQueriesEnabled = adapter.features.has('timestamp-query');
+                this.device = await adapter.requestDevice({
+                    requiredFeatures: this.timestampQueriesEnabled ? ['timestamp-query'] : []
+                });
+                this.maxStorageBufferBindingSize = this.device.limits.maxStorageBufferBindingSize;
+                this.safeColorBufferBytes = Math.min(this.safeColorBufferBytes, this.maxStorageBufferBindingSize);
+                this.device.addEventListener('uncapturederror', (event) => {
+                    console.error(event.error);
+                    setStatus(`WebGPU error: ${event.error.message}`);
+                });
+                this.device.lost.then((info) => {
+                    setStatus(`WebGPU device lost: ${info.message || info.reason}`);
+                });
+                this.context = this.canvas.getContext('webgpu');
+                this.canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+                this.offscreenFormat = 'rgba8unorm';
+                this.weightedAccumFormat = 'rgba16float';
+                this.weightedRevealFormat = 'rgba8unorm';
+                this.createTimingResources();
+                this.createLayouts();
+                this.createPipelines();
+                this.resize(true);
+            }
+
+            createTimingResources() {
+                if (!this.timestampQueriesEnabled) return;
+
+                this.timestampQuerySet = this.device.createQuerySet({ type: 'timestamp', count: 2 });
+                this.timestampResolveBuffer = this.device.createBuffer({
+                    size: 16,
+                    usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC
+                });
+                this.timestampReadBuffer = this.device.createBuffer({
+                    size: 16,
+                    usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+                });
+            }
+
+            createLayouts() {
+                const device = this.device;
+                this.frameLayout = device.createBindGroupLayout({
+                    entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }]
+                });
+                this.materialLayout = device.createBindGroupLayout({
+                    entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }]
+                });
+                this.storageLayout = device.createBindGroupLayout({
+                    entries: [
+                        { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'storage' } },
+                        { binding: 1, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'storage' } },
+                        { binding: 2, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'storage' } },
+                        { binding: 3, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'storage' } },
+                        { binding: 4, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'storage' } }
+                    ]
+                });
+                this.resolveFrameLayout = device.createBindGroupLayout({
+                    entries: [
+                        { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+                        { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } }
+                    ]
+                });
+                this.weightedResolveFrameLayout = device.createBindGroupLayout({
+                    entries: [
+                        { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+                        { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+                        { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'unfilterable-float' } },
+                        { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } }
+                    ]
+                });
+                this.renderPipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [this.frameLayout, this.materialLayout] });
+                this.ppllPipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [this.frameLayout, this.materialLayout, this.storageLayout] });
+                this.resolvePipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [this.resolveFrameLayout, this.storageLayout] });
+                this.weightedResolvePipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [this.weightedResolveFrameLayout] });
+            }
+
+            createPipelines() {
+                const device = this.device;
+                const litCanvasShader = device.createShaderModule({ code: this.getLitShader(true) });
+                const litLinearShader = device.createShaderModule({ code: this.getLitShader(false) });
+                const weightedStoreShader = device.createShaderModule({ code: this.getWeightedStoreShader() });
+                const weightedResolveShader = device.createShaderModule({ code: this.getWeightedResolveShader() });
+                const ppllShader = device.createShaderModule({ code: this.getPpllStoreShader() });
+                const resolveShader = device.createShaderModule({ code: this.getResolveShader() });
+
+                this.opaqueCanvasPipeline = this.createLitPipeline(litCanvasShader, this.canvasFormat, null, true);
+                this.opaqueOffscreenPipeline = this.createLitPipeline(litLinearShader, this.offscreenFormat, null, true);
+                this.transparentDepthWritePipeline = this.createLitPipeline(litCanvasShader, this.canvasFormat, {
+                    color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+                    alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' }
+                }, true);
+                this.transparentNoDepthWritePipeline = this.createLitPipeline(litCanvasShader, this.canvasFormat, {
+                    color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+                    alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' }
+                }, false);
+
+                this.weightedStorePipeline = device.createRenderPipeline({
+                    layout: this.renderPipelineLayout,
+                    vertex: { module: weightedStoreShader, entryPoint: 'vsMain', buffers: [this.vertexLayout()] },
+                    fragment: {
+                        module: weightedStoreShader,
+                        entryPoint: 'fsMain',
+                        targets: [
+                            {
+                                format: this.weightedAccumFormat,
+                                blend: {
+                                    color: { srcFactor: 'one', dstFactor: 'one', operation: 'add' },
+                                    alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' }
+                                }
+                            },
+                            {
+                                format: this.weightedRevealFormat,
+                                blend: {
+                                    color: { srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+                                    alpha: { srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' }
+                                }
+                            }
+                        ]
+                    },
+                    primitive: { topology: 'triangle-list', cullMode: 'none' },
+                    depthStencil: { format: 'depth24plus', depthWriteEnabled: false, depthCompare: 'less' }
+                });
+
+                this.weightedResolvePipeline = device.createRenderPipeline({
+                    layout: this.weightedResolvePipelineLayout,
+                    vertex: { module: weightedResolveShader, entryPoint: 'vsMain' },
+                    fragment: { module: weightedResolveShader, entryPoint: 'fsMain', targets: [{ format: this.canvasFormat }] },
+                    primitive: { topology: 'triangle-list' }
+                });
+
+                this.ppllStorePipeline = device.createRenderPipeline({
+                    layout: this.ppllPipelineLayout,
+                    vertex: {
+                        module: ppllShader,
+                        entryPoint: 'vsMain',
+                        buffers: [this.vertexLayout()]
+                    },
+                    fragment: {
+                        module: ppllShader,
+                        entryPoint: 'fsMain',
+                        targets: [{ format: this.offscreenFormat, writeMask: 0 }]
+                    },
+                    primitive: { topology: 'triangle-list', cullMode: 'none' },
+                    depthStencil: { format: 'depth24plus', depthWriteEnabled: false, depthCompare: 'less' }
+                });
+
+                this.resolvePipeline = device.createRenderPipeline({
+                    layout: this.resolvePipelineLayout,
+                    vertex: { module: resolveShader, entryPoint: 'vsMain' },
+                    fragment: { module: resolveShader, entryPoint: 'fsMain', targets: [{ format: this.canvasFormat }] },
+                    primitive: { topology: 'triangle-list' }
+                });
+            }
+
+            vertexLayout() {
+                return {
+                    arrayStride: 24,
+                    attributes: [
+                        { shaderLocation: 0, offset: 0, format: 'float32x3' },
+                        { shaderLocation: 1, offset: 12, format: 'float32x3' }
+                    ]
+                };
+            }
+
+            createLitPipeline(shader, format, blend, depthWriteEnabled) {
+                const target = { format };
+                if (blend) target.blend = blend;
+
+                return this.device.createRenderPipeline({
+                    layout: this.renderPipelineLayout,
+                    vertex: { module: shader, entryPoint: 'vsMain', buffers: [this.vertexLayout()] },
+                    fragment: { module: shader, entryPoint: 'fsMain', targets: [target] },
+                    primitive: { topology: 'triangle-list', cullMode: 'none' },
+                    depthStencil: { format: 'depth24plus', depthWriteEnabled, depthCompare: 'less' }
+                });
+            }
+
+            getLitShader(outputSrgb = false) {
+                return `
+                    struct Frame {
+                        viewProj: mat4x4<f32>,
+                        lightDir: vec4<f32>,
+                        screen: vec4<f32>,
+                        modelRotation: vec4<f32>,
+                    };
+                    struct Material {
+                        colorAlpha: vec4<f32>,
+                        flags: vec4<f32>,
+                    };
+                    struct VertexOut {
+                        @builtin(position) position: vec4<f32>,
+                        @location(0) normal: vec3<f32>,
+                    };
+
+                    @group(0) @binding(0) var<uniform> frame: Frame;
+                    @group(1) @binding(0) var<uniform> material: Material;
+
+                    fn rotateModelPosition(position: vec3<f32>) -> vec3<f32> {
+                        if (material.flags.x < 0.5) { return position; }
+                        let c = frame.modelRotation.x;
+                        let s = frame.modelRotation.y;
+                        return vec3<f32>(position.x * c + position.z * s, position.y, -position.x * s + position.z * c);
+                    }
+
+                    fn rotateModelNormal(normal: vec3<f32>) -> vec3<f32> {
+                        if (material.flags.x < 0.5) { return normalize(normal); }
+                        let c = frame.modelRotation.x;
+                        let s = frame.modelRotation.y;
+                        return normalize(vec3<f32>(normal.x * c + normal.z * s, normal.y, -normal.x * s + normal.z * c));
+                    }
+
+                    @vertex
+                    fn vsMain(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>) -> VertexOut {
+                        var out: VertexOut;
+                        let rotatedPosition = rotateModelPosition(position);
+                        out.position = frame.viewProj * vec4<f32>(rotatedPosition, 1.0);
+                        out.normal = rotateModelNormal(normal);
+                        return out;
+                    }
+
+                    fn shade(normal: vec3<f32>, color: vec3<f32>) -> vec3<f32> {
+                        let n = normalize(normal);
+                        let l = normalize(-frame.lightDir.xyz);
+                        let diffuse = max(dot(n, l), 0.0);
+                        let backDiffuse = max(dot(-n, l), 0.0) * 0.55;
+                        return color * (0.48 + 0.52 * max(diffuse, backDiffuse));
+                    }
+
+                    fn linearToSrgb(value: vec3<f32>) -> vec3<f32> {
+                        let low = value * 12.92;
+                        let high = 1.055 * pow(max(value, vec3<f32>(0.0)), vec3<f32>(1.0 / 2.4)) - 0.055;
+                        return mix(low, high, step(vec3<f32>(0.0031308), value));
+                    }
+
+                    @fragment
+                    fn fsMain(input: VertexOut) -> @location(0) vec4<f32> {
+                        var color = shade(input.normal, material.colorAlpha.rgb);
+                        ${outputSrgb ? 'color = linearToSrgb(color);' : ''}
+                        return vec4<f32>(color, material.colorAlpha.a);
+                    }
+                `;
+            }
+
+            getWeightedStoreShader() {
+                return `
+                    struct Frame {
+                        viewProj: mat4x4<f32>,
+                        lightDir: vec4<f32>,
+                        screen: vec4<f32>,
+                        modelRotation: vec4<f32>,
+                    };
+                    struct Material {
+                        colorAlpha: vec4<f32>,
+                        flags: vec4<f32>,
+                    };
+                    struct VertexOut {
+                        @builtin(position) position: vec4<f32>,
+                        @location(0) normal: vec3<f32>,
+                    };
+                    struct WeightedOut {
+                        @location(0) accum: vec4<f32>,
+                        @location(1) reveal: vec4<f32>,
+                    };
+
+                    @group(0) @binding(0) var<uniform> frame: Frame;
+                    @group(1) @binding(0) var<uniform> material: Material;
+
+                    fn rotateModelPosition(position: vec3<f32>) -> vec3<f32> {
+                        if (material.flags.x < 0.5) { return position; }
+                        let c = frame.modelRotation.x;
+                        let s = frame.modelRotation.y;
+                        return vec3<f32>(position.x * c + position.z * s, position.y, -position.x * s + position.z * c);
+                    }
+
+                    fn rotateModelNormal(normal: vec3<f32>) -> vec3<f32> {
+                        if (material.flags.x < 0.5) { return normalize(normal); }
+                        let c = frame.modelRotation.x;
+                        let s = frame.modelRotation.y;
+                        return normalize(vec3<f32>(normal.x * c + normal.z * s, normal.y, -normal.x * s + normal.z * c));
+                    }
+
+                    @vertex
+                    fn vsMain(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>) -> VertexOut {
+                        var out: VertexOut;
+                        let rotatedPosition = rotateModelPosition(position);
+                        out.position = frame.viewProj * vec4<f32>(rotatedPosition, 1.0);
+                        out.normal = rotateModelNormal(normal);
+                        return out;
+                    }
+
+                    fn shade(normal: vec3<f32>, color: vec3<f32>) -> vec3<f32> {
+                        let n = normalize(normal);
+                        let l = normalize(-frame.lightDir.xyz);
+                        let diffuse = max(dot(n, l), 0.0);
+                        let backDiffuse = max(dot(-n, l), 0.0) * 0.55;
+                        return color * (0.48 + 0.52 * max(diffuse, backDiffuse));
+                    }
+
+                    @fragment
+                    fn fsMain(input: VertexOut) -> WeightedOut {
+                        let alpha = clamp(material.colorAlpha.a, 0.0, 1.0);
+                        if (alpha <= 0.001) { discard; }
+
+                        let color = shade(input.normal, material.colorAlpha.rgb);
+                        var out: WeightedOut;
+                        out.accum = vec4<f32>(color * alpha, alpha);
+                        out.reveal = vec4<f32>(0.0, 0.0, 0.0, alpha);
+                        return out;
+                    }
+                `;
+            }
+
+            getWeightedResolveShader() {
+                return `
+                    struct Frame {
+                        viewProj: mat4x4<f32>,
+                        lightDir: vec4<f32>,
+                        screen: vec4<f32>,
+                    };
+                    struct VertexOut {
+                        @builtin(position) position: vec4<f32>,
+                    };
+
+                    @group(0) @binding(0) var<uniform> frame: Frame;
+                    @group(0) @binding(1) var opaqueColor: texture_2d<f32>;
+                    @group(0) @binding(2) var accumTexture: texture_2d<f32>;
+                    @group(0) @binding(3) var revealTexture: texture_2d<f32>;
+
+                    @vertex
+                    fn vsMain(@builtin(vertex_index) vertexIndex: u32) -> VertexOut {
+                        var positions = array<vec2<f32>, 3>(
+                            vec2<f32>(-1.0, -1.0),
+                            vec2<f32>(3.0, -1.0),
+                            vec2<f32>(-1.0, 3.0)
+                        );
+                        var out: VertexOut;
+                        out.position = vec4<f32>(positions[vertexIndex], 0.0, 1.0);
+                        return out;
+                    }
+
+                    fn linearToSrgb(value: vec3<f32>) -> vec3<f32> {
+                        let low = value * 12.92;
+                        let high = 1.055 * pow(max(value, vec3<f32>(0.0)), vec3<f32>(1.0 / 2.4)) - 0.055;
+                        return mix(low, high, step(vec3<f32>(0.0031308), value));
+                    }
+
+                    @fragment
+                    fn fsMain(input: VertexOut) -> @location(0) vec4<f32> {
+                        let x = i32(clamp(input.position.x, 0.0, frame.screen.x - 1.0));
+                        let y = i32(clamp(input.position.y, 0.0, frame.screen.y - 1.0));
+                        let pixel = vec2<i32>(x, y);
+                        let opaque = textureLoad(opaqueColor, pixel, 0).rgb;
+                        let accum = textureLoad(accumTexture, pixel, 0);
+                        let revealage = clamp(textureLoad(revealTexture, pixel, 0).r, 0.0, 1.0);
+                        let revealAlpha = 1.0 - revealage;
+                        let summedAlpha = clamp(accum.a, 0.0, 1.0);
+                        let alpha = max(revealAlpha, summedAlpha);
+                        let transparentColor = select(vec3<f32>(0.0), accum.rgb / accum.a, accum.a > 0.00001);
+                        let color = mix(opaque, transparentColor, alpha);
+                        return vec4<f32>(linearToSrgb(color), 1.0);
+                    }
+                `;
+            }
+
+            getPpllStoreShader() {
+                return `
+                    struct Frame {
+                        viewProj: mat4x4<f32>,
+                        lightDir: vec4<f32>,
+                        screen: vec4<f32>,
+                        modelRotation: vec4<f32>,
+                    };
+                    struct Material {
+                        colorAlpha: vec4<f32>,
+                        flags: vec4<f32>,
+                    };
+                    struct Counter { value: atomic<u32> };
+                    struct VertexOut {
+                        @builtin(position) position: vec4<f32>,
+                        @location(0) normal: vec3<f32>,
+                    };
+
+                    @group(0) @binding(0) var<uniform> frame: Frame;
+                    @group(1) @binding(0) var<uniform> material: Material;
+                    @group(2) @binding(0) var<storage, read_write> heads: array<atomic<u32>>;
+                    @group(2) @binding(1) var<storage, read_write> colors: array<vec4<f32>>;
+                    @group(2) @binding(2) var<storage, read_write> depths: array<f32>;
+                    @group(2) @binding(3) var<storage, read_write> nexts: array<u32>;
+                    @group(2) @binding(4) var<storage, read_write> counter: Counter;
+
+                    fn rotateModelPosition(position: vec3<f32>) -> vec3<f32> {
+                        if (material.flags.x < 0.5) { return position; }
+                        let c = frame.modelRotation.x;
+                        let s = frame.modelRotation.y;
+                        return vec3<f32>(position.x * c + position.z * s, position.y, -position.x * s + position.z * c);
+                    }
+
+                    fn rotateModelNormal(normal: vec3<f32>) -> vec3<f32> {
+                        if (material.flags.x < 0.5) { return normalize(normal); }
+                        let c = frame.modelRotation.x;
+                        let s = frame.modelRotation.y;
+                        return normalize(vec3<f32>(normal.x * c + normal.z * s, normal.y, -normal.x * s + normal.z * c));
+                    }
+
+                    @vertex
+                    fn vsMain(@location(0) position: vec3<f32>, @location(1) normal: vec3<f32>) -> VertexOut {
+                        var out: VertexOut;
+                        let rotatedPosition = rotateModelPosition(position);
+                        out.position = frame.viewProj * vec4<f32>(rotatedPosition, 1.0);
+                        out.normal = rotateModelNormal(normal);
+                        return out;
+                    }
+
+                    fn shade(normal: vec3<f32>, color: vec3<f32>) -> vec3<f32> {
+                        let n = normalize(normal);
+                        let l = normalize(-frame.lightDir.xyz);
+                        let diffuse = max(dot(n, l), 0.0);
+                        let backDiffuse = max(dot(-n, l), 0.0) * 0.55;
+                        return color * (0.48 + 0.52 * max(diffuse, backDiffuse));
+                    }
+
+                    @fragment
+                    fn fsMain(input: VertexOut) -> @location(0) vec4<f32> {
+                        let alpha = clamp(material.colorAlpha.a, 0.0, 1.0);
+                        if (alpha <= 0.001) { discard; }
+
+                        let x = u32(clamp(input.position.x, 0.0, frame.screen.x - 1.0));
+                        let y = u32(clamp(input.position.y, 0.0, frame.screen.y - 1.0));
+                        let pixelIndex = y * u32(frame.screen.x) + x;
+                        let nodeIndex = atomicAdd(&counter.value, 1u) + 1u;
+
+                        if (nodeIndex < u32(frame.screen.z)) {
+                            let oldHead = atomicExchange(&heads[pixelIndex], nodeIndex);
+                            colors[nodeIndex] = vec4<f32>(shade(input.normal, material.colorAlpha.rgb), alpha);
+                            depths[nodeIndex] = input.position.z;
+                            nexts[nodeIndex] = oldHead;
+                        }
+
+                        return vec4<f32>(0.0);
+                    }
+                `;
+            }
+
+            getResolveShader() {
+                return `
+                    const MAX_SORT: u32 = 32u;
+
+                    struct Frame {
+                        viewProj: mat4x4<f32>,
+                        lightDir: vec4<f32>,
+                        screen: vec4<f32>,
+                    };
+                    struct Counter { value: atomic<u32> };
+                    struct VertexOut {
+                        @builtin(position) position: vec4<f32>,
+                    };
+
+                    @group(0) @binding(0) var<uniform> frame: Frame;
+                    @group(0) @binding(1) var opaqueColor: texture_2d<f32>;
+                    @group(1) @binding(0) var<storage, read_write> heads: array<atomic<u32>>;
+                    @group(1) @binding(1) var<storage, read_write> colors: array<vec4<f32>>;
+                    @group(1) @binding(2) var<storage, read_write> depths: array<f32>;
+                    @group(1) @binding(3) var<storage, read_write> nexts: array<u32>;
+                    @group(1) @binding(4) var<storage, read_write> counter: Counter;
+
+                    @vertex
+                    fn vsMain(@builtin(vertex_index) vertexIndex: u32) -> VertexOut {
+                        var positions = array<vec2<f32>, 3>(
+                            vec2<f32>(-1.0, -1.0),
+                            vec2<f32>(3.0, -1.0),
+                            vec2<f32>(-1.0, 3.0)
+                        );
+                        var out: VertexOut;
+                        out.position = vec4<f32>(positions[vertexIndex], 0.0, 1.0);
+                        return out;
+                    }
+
+                    fn linearToSrgb(value: vec3<f32>) -> vec3<f32> {
+                        let low = value * 12.92;
+                        let high = 1.055 * pow(max(value, vec3<f32>(0.0)), vec3<f32>(1.0 / 2.4)) - 0.055;
+                        return mix(low, high, step(vec3<f32>(0.0031308), value));
+                    }
+
+                    @fragment
+                    fn fsMain(input: VertexOut) -> @location(0) vec4<f32> {
+                        let x = u32(clamp(input.position.x, 0.0, frame.screen.x - 1.0));
+                        let y = u32(clamp(input.position.y, 0.0, frame.screen.y - 1.0));
+                        let pixelIndex = y * u32(frame.screen.x) + x;
+                        var node = atomicLoad(&heads[pixelIndex]);
+                        var count = 0u;
+                        var fragmentColors: array<vec4<f32>, 32>;
+                        var fragmentDepths: array<f32, 32>;
+
+                        loop {
+                            if (node == 0u || count >= MAX_SORT) { break; }
+                            fragmentColors[count] = colors[node];
+                            fragmentDepths[count] = depths[node];
+                            node = nexts[node];
+                            count = count + 1u;
+                        }
+
+                        var i = 0u;
+                        loop {
+                            if (i >= count) { break; }
+                            var j = i + 1u;
+                            loop {
+                                if (j >= count) { break; }
+                                if (fragmentDepths[i] < fragmentDepths[j]) {
+                                    let depthTemp = fragmentDepths[i];
+                                    fragmentDepths[i] = fragmentDepths[j];
+                                    fragmentDepths[j] = depthTemp;
+                                    let colorTemp = fragmentColors[i];
+                                    fragmentColors[i] = fragmentColors[j];
+                                    fragmentColors[j] = colorTemp;
+                                }
+                                j = j + 1u;
+                            }
+                            i = i + 1u;
+                        }
+
+                        var outColor = textureLoad(opaqueColor, vec2<i32>(i32(x), i32(y)), 0).rgb;
+                        var k = 0u;
+                        loop {
+                            if (k >= count) { break; }
+                            let src = fragmentColors[k];
+                            outColor = src.rgb * src.a + outColor * (1.0 - src.a);
+                            k = k + 1u;
+                        }
+
+                        return vec4<f32>(linearToSrgb(outColor), 1.0);
+                    }
+                `;
+            }
+
+            resize(force = false) {
+                const cssWidth = Math.max(1, Math.floor(this.canvas.clientWidth));
+                const cssHeight = Math.max(1, Math.floor(this.canvas.clientHeight));
+                const pixelScale = Math.min(1, Math.sqrt(this.maxRenderPixels / (cssWidth * cssHeight)));
+                const width = Math.max(1, Math.floor(cssWidth * pixelScale));
+                const height = Math.max(1, Math.floor(cssHeight * pixelScale));
+                const requestedNodeBudget = Number(nodeBudget.value);
+
+                if (!force && width === this.width && height === this.height && this.nodeBudget === requestedNodeBudget) {
+                    return;
+                }
+
+                this.width = width;
+                this.height = height;
+                this.nodeBudget = requestedNodeBudget;
+                const pixelCount = width * height;
+                const maxColorNodes = Math.max(2, Math.floor((this.safeColorBufferBytes - 16) / 16));
+                this.effectiveNodeBudget = Math.max(1, Math.min(this.nodeBudget, Math.floor((maxColorNodes - 1) / pixelCount)));
+                this.maxNodes = Math.max(2, pixelCount * this.effectiveNodeBudget + 1);
+                this.canvas.width = width;
+                this.canvas.height = height;
+                this.context.configure({ device: this.device, format: this.canvasFormat, alphaMode: 'opaque' });
+                this.createTargets();
+                this.createStorageBuffers();
+                this.updateStatus();
+            }
+
+            createTargets() {
+                const device = this.device;
+                const size = [this.width, this.height];
+                this.canvasDepthTexture = device.createTexture({ size, format: 'depth24plus', usage: GPUTextureUsage.RENDER_ATTACHMENT });
+                this.opaqueColorTexture = device.createTexture({
+                    size,
+                    format: this.offscreenFormat,
+                    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+                });
+                this.weightedAccumTexture = device.createTexture({
+                    size,
+                    format: this.weightedAccumFormat,
+                    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+                });
+                this.weightedRevealTexture = device.createTexture({
+                    size,
+                    format: this.weightedRevealFormat,
+                    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+                });
+                this.opaqueDepthTexture = device.createTexture({ size, format: 'depth24plus', usage: GPUTextureUsage.RENDER_ATTACHMENT });
+                this.opaqueColorView = this.opaqueColorTexture.createView();
+                this.weightedAccumView = this.weightedAccumTexture.createView();
+                this.weightedRevealView = this.weightedRevealTexture.createView();
+                this.opaqueDepthView = this.opaqueDepthTexture.createView();
+                this.canvasDepthView = this.canvasDepthTexture.createView();
+
+                if (!this.frameBuffer) {
+                    this.frameBuffer = device.createBuffer({ size: 112, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+                    this.frameBindGroup = device.createBindGroup({
+                        layout: this.frameLayout,
+                        entries: [{ binding: 0, resource: { buffer: this.frameBuffer } }]
+                    });
+                }
+
+                this.resolveFrameBindGroup = device.createBindGroup({
+                    layout: this.resolveFrameLayout,
+                    entries: [
+                        { binding: 0, resource: { buffer: this.frameBuffer } },
+                        { binding: 1, resource: this.opaqueColorView }
+                    ]
+                });
+
+                this.weightedResolveFrameBindGroup = device.createBindGroup({
+                    layout: this.weightedResolveFrameLayout,
+                    entries: [
+                        { binding: 0, resource: { buffer: this.frameBuffer } },
+                        { binding: 1, resource: this.opaqueColorView },
+                        { binding: 2, resource: this.weightedAccumView },
+                        { binding: 3, resource: this.weightedRevealView }
+                    ]
+                });
+            }
+
+            createStorageBuffers() {
+                const device = this.device;
+                const pixelCount = this.width * this.height;
+                this.headBuffer = device.createBuffer({ size: pixelCount * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+                this.colorBuffer = device.createBuffer({ size: this.maxNodes * 16, usage: GPUBufferUsage.STORAGE });
+                this.depthBuffer = device.createBuffer({ size: this.maxNodes * 4, usage: GPUBufferUsage.STORAGE });
+                this.nextBuffer = device.createBuffer({ size: this.maxNodes * 4, usage: GPUBufferUsage.STORAGE });
+                this.counterBuffer = device.createBuffer({
+                    size: 4,
+                    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC
+                });
+                this.counterReadBuffer = device.createBuffer({
+                    size: 4,
+                    usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+                });
+                this.storageBindGroup = device.createBindGroup({
+                    layout: this.storageLayout,
+                    entries: [
+                        { binding: 0, resource: { buffer: this.headBuffer } },
+                        { binding: 1, resource: { buffer: this.colorBuffer } },
+                        { binding: 2, resource: { buffer: this.depthBuffer } },
+                        { binding: 3, resource: { buffer: this.nextBuffer } },
+                        { binding: 4, resource: { buffer: this.counterBuffer } }
+                    ]
+                });
+            }
+
+            updateStatus() {
+                const mode = getTransparencyMode();
+                const cssWidth = Math.floor(this.canvas.clientWidth);
+                const cssHeight = Math.floor(this.canvas.clientHeight);
+                const scaleText = this.width === cssWidth && this.height === cssHeight ?
+                    'native' :
+                    `scaled from ${cssWidth}x${cssHeight}`;
+                const setDiagnosticText = (element, text) => {
+                    if (element) element.textContent = text;
+                };
+
+                setDiagnosticText(diagnosticScene, currentSceneLabel);
+                setDiagnosticText(diagnosticMode, getModeLabel(mode));
+                setDiagnosticText(diagnosticCanvas, `${this.width}x${this.height} (${scaleText})`);
+                setDiagnosticText(diagnosticFragments, mode === 'ppll' && this.lastNodeCount !== null ? this.lastNodeCount.toLocaleString() : '-');
+
+                if (diagnosticEffectiveBudget) {
+                    diagnosticEffectiveBudget.textContent = `${this.effectiveNodeBudget}/${this.nodeBudget} nodes/pixel`;
+                }
+
+                const nodePercent = this.maxNodes > 1 && this.lastNodeCount !== null ?
+                    Math.min(100, Math.round((this.lastNodeCount / Math.max(1, this.maxNodes - 1)) * 100)) : 0;
+                if (diagnosticNodeFill) diagnosticNodeFill.style.width = `${nodePercent}%`;
+                if (diagnosticNodePercent) diagnosticNodePercent.textContent = `${nodePercent}%`;
+
+                if (mode === 'conventional') {
+                    const textureBytes = this.width * this.height * (4 + 4);
+                    const mb = (textureBytes / (1024 * 1024)).toFixed(1);
+                    const drawOrder = document.querySelector('input[name="drawOrder"]:checked')?.value || 'correct';
+                    const orderText = drawOrder === 'correct' ? 'back-to-front' : 'front-to-back';
+                    const depthText = depthWriteToggle.checked ? 'with depth writes' : 'without depth writes';
+                    setDiagnosticText(diagnosticMemory, `~${mb} MB`);
+                    setStatus(`${currentSceneLabel}. Conventional ${orderText} transparency ${depthText}. Shading matches the OIT modes.`);
+                    return;
+                }
+
+                if (mode === 'weighted') {
+                    const textureBytes = this.width * this.height * (4 + 8 + 4);
+                    const mb = (textureBytes / (1024 * 1024)).toFixed(1);
+                    setDiagnosticText(diagnosticMemory, `~${mb} MB`);
+                    setStatus(`${currentSceneLabel}. Weighted blended OIT. OIT buffer: ${this.width}x${this.height}, ${scaleText}, ~${mb} MB.`);
+                    return;
+                }
+
+                const nodeBytes = this.maxNodes * 24 + this.width * this.height * 4 + 4;
+                const mb = (nodeBytes / (1024 * 1024)).toFixed(1);
+                setDiagnosticText(diagnosticMemory, `~${mb} MB`);
+                const budgetText = this.effectiveNodeBudget === this.nodeBudget ?
+                    `${this.nodeBudget} nodes/pixel` :
+                    `${this.effectiveNodeBudget}/${this.nodeBudget} nodes/pixel (capped)`;
+                const nodeText = this.lastNodeCount === null ? '' : `, last fragments: ${this.lastNodeCount}`;
+                setStatus(`${currentSceneLabel}. PPLL exact per-pixel sorting. PPLL buffer: ${this.width}x${this.height}, ${scaleText}, ${budgetText}, ~${mb} MB${nodeText}.`);
+            }
+
+            requestCounterReadback(encoder) {
+                const now = performance.now();
+
+                if (this.counterReadPending || this.counterMapInFlight || now - this.lastCounterReadTime < 1000) return;
+
+                this.lastCounterReadTime = now;
+                this.counterReadPending = true;
+                this.pendingCounterReadBuffer = this.counterReadBuffer;
+                encoder.copyBufferToBuffer(this.counterBuffer, 0, this.pendingCounterReadBuffer, 0, 4);
+            }
+
+            async finishCounterReadback() {
+                if (!this.counterReadPending || this.counterMapInFlight) return;
+
+                try {
+                    this.counterReadPending = false;
+                    this.counterMapInFlight = true;
+                    const readBuffer = this.pendingCounterReadBuffer || this.counterReadBuffer;
+                    await readBuffer.mapAsync(GPUMapMode.READ);
+                    const data = new Uint32Array(readBuffer.getMappedRange().slice(0));
+                    readBuffer.unmap();
+                    this.lastNodeCount = data[0];
+                    this.updateStatus();
+                } catch (error) {
+                    console.warn(error);
+                } finally {
+                    this.pendingCounterReadBuffer = null;
+                    this.counterMapInFlight = false;
+                }
+            }
+
+            beginGpuTiming(encoder) {
+                if (!this.timestampQueriesEnabled || !this.timestampQuerySet || this.gpuTimingPending || this.gpuTimingMapInFlight) {
+                    return false;
+                }
+
+                const now = performance.now();
+                if (now - this.lastGpuTimingTime < 250) return false;
+
+                this.lastGpuTimingTime = now;
+                this.gpuTimingMode = typeof encoder.writeTimestamp === 'function' ? 'encoder' : 'pass';
+                if (this.gpuTimingMode === 'encoder') encoder.writeTimestamp(this.timestampQuerySet, 0);
+                return true;
+            }
+
+            getTimestampWrites(active, begin, end) {
+                if (!active || this.gpuTimingMode !== 'pass') return undefined;
+
+                const writes = { querySet: this.timestampQuerySet };
+                if (begin) writes.beginningOfPassWriteIndex = 0;
+                if (end) writes.endOfPassWriteIndex = 1;
+                return writes;
+            }
+
+            endGpuTiming(encoder, active) {
+                if (!active) return;
+
+                if (this.gpuTimingMode === 'encoder') encoder.writeTimestamp(this.timestampQuerySet, 1);
+                encoder.resolveQuerySet(this.timestampQuerySet, 0, 2, this.timestampResolveBuffer, 0);
+                encoder.copyBufferToBuffer(this.timestampResolveBuffer, 0, this.timestampReadBuffer, 0, 16);
+                this.gpuTimingPending = true;
+            }
+
+            async finishGpuTiming() {
+                if (!this.gpuTimingPending || this.gpuTimingMapInFlight) return;
+
+                try {
+                    this.gpuTimingPending = false;
+                    this.gpuTimingMapInFlight = true;
+                    await this.timestampReadBuffer.mapAsync(GPUMapMode.READ);
+                    const timestamps = new BigUint64Array(this.timestampReadBuffer.getMappedRange().slice(0));
+                    this.timestampReadBuffer.unmap();
+
+                    if (timestamps[1] > timestamps[0]) {
+                        this.lastGpuMs = Number(timestamps[1] - timestamps[0]) / 1000000;
+                    }
+                    this.updatePerformanceDiagnostics(true);
+                } catch (error) {
+                    console.warn(error);
+                    this.lastGpuMs = null;
+                    this.updatePerformanceDiagnostics(true);
+                } finally {
+                    this.gpuTimingMapInFlight = false;
+                }
+            }
+
+            updatePerformanceMetrics(frameStart, cpuMs) {
+                if (this.lastFrameStart > 0) {
+                    const frameDelta = frameStart - this.lastFrameStart;
+                    if (frameDelta > 0) {
+                        const fps = 1000 / frameDelta;
+                        this.fpsAverage = this.fpsAverage === null ? fps : this.fpsAverage * 0.9 + fps * 0.1;
+                    }
+                }
+
+                this.lastFrameStart = frameStart;
+                this.cpuMsAverage = this.cpuMsAverage === null ? cpuMs : this.cpuMsAverage * 0.9 + cpuMs * 0.1;
+                this.updatePerformanceDiagnostics(false);
+            }
+
+            updatePerformanceDiagnostics(force = false) {
+                const now = performance.now();
+                if (!force && now - this.lastPerformanceUiTime < 250) return;
+
+                this.lastPerformanceUiTime = now;
+                if (diagnosticFps) diagnosticFps.textContent = this.fpsAverage === null ? '-' : this.fpsAverage.toFixed(1);
+                if (diagnosticCpuMs) diagnosticCpuMs.textContent = this.cpuMsAverage === null ? '-' : `${this.cpuMsAverage.toFixed(2)} ms`;
+                if (diagnosticGpuMs) {
+                    diagnosticGpuMs.textContent = this.timestampQueriesEnabled ?
+                        (this.lastGpuMs === null ? 'measuring...' : `${this.lastGpuMs.toFixed(2)} ms`) :
+                        'unavailable';
+                }
+            }
+
+            resetPerformanceMetrics(mode = getTransparencyMode()) {
+                this.performanceMode = mode;
+                this.fpsAverage = null;
+                this.cpuMsAverage = null;
+                this.lastFrameStart = 0;
+                this.lastGpuMs = null;
+                this.lastPerformanceUiTime = 0;
+                this.updatePerformanceDiagnostics(true);
+            }
+
+            computeGeometryCenter(vertices) {
+                const min = [Infinity, Infinity, Infinity];
+                const max = [-Infinity, -Infinity, -Infinity];
+
+                for (let i = 0; i < vertices.length; i += 6) {
+                    min[0] = Math.min(min[0], vertices[i]);
+                    min[1] = Math.min(min[1], vertices[i + 1]);
+                    min[2] = Math.min(min[2], vertices[i + 2]);
+                    max[0] = Math.max(max[0], vertices[i]);
+                    max[1] = Math.max(max[1], vertices[i + 1]);
+                    max[2] = Math.max(max[2], vertices[i + 2]);
+                }
+
+                if (!Number.isFinite(min[0])) return [0, 0, 0];
+                return [
+                    (min[0] + max[0]) * 0.5,
+                    (min[1] + max[1]) * 0.5,
+                    (min[2] + max[2]) * 0.5
+                ];
+            }
+
+            getEffectiveMeshColor(mesh) {
+                const color = mesh.baseColor.slice();
+                if (mesh.isTransparent) color[3] = clamp(color[3] * getAlphaMultiplier(), 0, 1);
+                return color;
+            }
+
+            writeMaterialBuffer(mesh) {
+                this.device.queue.writeBuffer(mesh.materialBuffer, 0, new Float32Array([
+                    ...this.getEffectiveMeshColor(mesh),
+                    mesh.rotateWithModel ? 1 : 0,
+                    0,
+                    0,
+                    0
+                ]));
+            }
+
+            createGpuMesh(mesh, isTransparent = false) {
+                const device = this.device;
+                const vertexBuffer = device.createBuffer({
+                    size: mesh.geometry.vertices.byteLength,
+                    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+                });
+                device.queue.writeBuffer(vertexBuffer, 0, mesh.geometry.vertices);
+
+                const indexBuffer = device.createBuffer({
+                    size: mesh.geometry.indices.byteLength,
+                    usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST
+                });
+                device.queue.writeBuffer(indexBuffer, 0, mesh.geometry.indices);
+
+                const materialBuffer = device.createBuffer({ size: 32, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+                const materialBindGroup = device.createBindGroup({
+                    layout: this.materialLayout,
+                    entries: [{ binding: 0, resource: { buffer: materialBuffer } }]
+                });
+
+                const gpuMesh = {
+                    name: mesh.name,
+                    vertexBuffer,
+                    indexBuffer,
+                    indexCount: mesh.geometry.indices.length,
+                    materialBuffer,
+                    materialBindGroup,
+                    baseColor: mesh.color.slice(),
+                    isTransparent,
+                    rotateWithModel: mesh.rotateWithModel ?? isTransparent,
+                    center: this.computeGeometryCenter(mesh.geometry.vertices)
+                };
+                this.writeMaterialBuffer(gpuMesh);
+                return gpuMesh;
+            }
+
+            setSceneMeshes(rawMeshes) {
+                this.opaqueMeshes = rawMeshes.opaque.map((mesh) => this.createGpuMesh(mesh, false));
+                this.transparentMeshes = rawMeshes.transparent.map((mesh) => this.createGpuMesh(mesh, true));
+                this.updateAlphaMultiplier();
+                this.updateStatus();
+            }
+
+            updateAlphaMultiplier() {
+                [...this.opaqueMeshes, ...this.transparentMeshes].forEach((mesh) => this.writeMaterialBuffer(mesh));
+            }
+
+            updateFrameBuffer() {
+                syncBabylonCamera();
+                const view = babylonCamera ? new Float32Array(babylonCamera.getViewMatrix().m) : lookAt(getCameraEye(), orbit.target, [0, 1, 0]);
+                const fov = babylonCamera ? babylonCamera.fov : 45 * Math.PI / 180;
+                const near = babylonCamera ? babylonCamera.minZ : 0.1;
+                const far = babylonCamera ? babylonCamera.maxZ : 100;
+                const proj = perspective(fov, this.width / this.height, near, far);
+                const viewProj = multiplyMat4(proj, view);
+                const data = new Float32Array(28);
+                data.set(viewProj, 0);
+                data.set(normalize([-5, -10, -7]).concat(0), 16);
+                data.set([this.width, this.height, this.maxNodes, 0], 20);
+                data.set([Math.cos(modelRotation), Math.sin(modelRotation), 0, 0], 24);
+                this.device.queue.writeBuffer(this.frameBuffer, 0, data);
+            }
+
+            drawMeshes(pass, meshes) {
+                pass.setBindGroup(0, this.frameBindGroup);
+                for (const mesh of meshes) {
+                    pass.setVertexBuffer(0, mesh.vertexBuffer);
+                    pass.setIndexBuffer(mesh.indexBuffer, 'uint32');
+                    pass.setBindGroup(1, mesh.materialBindGroup);
+                    pass.drawIndexed(mesh.indexCount);
+                }
+            }
+
+            orderedTransparentMeshes() {
+                const drawOrder = document.querySelector('input[name="drawOrder"]:checked').value;
+                const eye = getCameraEye();
+
+                return this.transparentMeshes.slice().sort((a, b) => {
+                    const centerA = rotateModelPoint(a.center, a.rotateWithModel);
+                    const centerB = rotateModelPoint(b.center, b.rotateWithModel);
+                    const da = (centerA[0] - eye[0]) ** 2 + (centerA[1] - eye[1]) ** 2 + (centerA[2] - eye[2]) ** 2;
+                    const db = (centerB[0] - eye[0]) ** 2 + (centerB[1] - eye[1]) ** 2 + (centerB[2] - eye[2]) ** 2;
+                    return drawOrder === 'correct' ? db - da : da - db;
+                });
+            }
+
+            renderConventional(encoder, currentView, gpuTimingActive) {
+                const depthWriteEnabled = depthWriteToggle.checked;
+                const pass = encoder.beginRenderPass({
+                    colorAttachments: [{ view: currentView, clearValue: { r: canvasClearColor, g: canvasClearColor, b: canvasClearColor, a: 1 }, loadOp: 'clear', storeOp: 'store' }],
+                    depthStencilAttachment: { view: this.canvasDepthView, depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'store' },
+                    timestampWrites: this.getTimestampWrites(gpuTimingActive, true, true)
+                });
+
+                pass.setPipeline(this.opaqueCanvasPipeline);
+                this.drawMeshes(pass, this.opaqueMeshes);
+                pass.setPipeline(depthWriteEnabled ? this.transparentDepthWritePipeline : this.transparentNoDepthWritePipeline);
+                this.drawMeshes(pass, this.orderedTransparentMeshes());
+                pass.end();
+            }
+
+            renderWeightedOit(encoder, currentView, gpuTimingActive) {
+                const opaquePass = encoder.beginRenderPass({
+                    colorAttachments: [{ view: this.opaqueColorView, clearValue: { r: 0.133, g: 0.133, b: 0.133, a: 1 }, loadOp: 'clear', storeOp: 'store' }],
+                    depthStencilAttachment: { view: this.opaqueDepthView, depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'store' },
+                    timestampWrites: this.getTimestampWrites(gpuTimingActive, true, false)
+                });
+                opaquePass.setPipeline(this.opaqueOffscreenPipeline);
+                this.drawMeshes(opaquePass, this.opaqueMeshes);
+                opaquePass.end();
+
+                const accumPass = encoder.beginRenderPass({
+                    colorAttachments: [
+                        { view: this.weightedAccumView, clearValue: { r: 0, g: 0, b: 0, a: 0 }, loadOp: 'clear', storeOp: 'store' },
+                        { view: this.weightedRevealView, clearValue: { r: 1, g: 1, b: 1, a: 1 }, loadOp: 'clear', storeOp: 'store' }
+                    ],
+                    depthStencilAttachment: { view: this.opaqueDepthView, depthLoadOp: 'load', depthStoreOp: 'store' }
+                });
+                accumPass.setPipeline(this.weightedStorePipeline);
+                this.drawMeshes(accumPass, this.transparentMeshes);
+                accumPass.end();
+
+                const resolvePass = encoder.beginRenderPass({
+                    colorAttachments: [{ view: currentView, clearValue: { r: 0, g: 0, b: 0, a: 1 }, loadOp: 'clear', storeOp: 'store' }],
+                    timestampWrites: this.getTimestampWrites(gpuTimingActive, false, true)
+                });
+                resolvePass.setPipeline(this.weightedResolvePipeline);
+                resolvePass.setBindGroup(0, this.weightedResolveFrameBindGroup);
+                resolvePass.draw(3);
+                resolvePass.end();
+            }
+
+            renderPpll(encoder, currentView, gpuTimingActive) {
+                encoder.clearBuffer(this.headBuffer);
+                encoder.clearBuffer(this.counterBuffer);
+
+                const opaquePass = encoder.beginRenderPass({
+                    colorAttachments: [{ view: this.opaqueColorView, clearValue: { r: 0.133, g: 0.133, b: 0.133, a: 1 }, loadOp: 'clear', storeOp: 'store' }],
+                    depthStencilAttachment: { view: this.opaqueDepthView, depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'store' },
+                    timestampWrites: this.getTimestampWrites(gpuTimingActive, true, false)
+                });
+                opaquePass.setPipeline(this.opaqueOffscreenPipeline);
+                this.drawMeshes(opaquePass, this.opaqueMeshes);
+                opaquePass.end();
+
+                const storePass = encoder.beginRenderPass({
+                    colorAttachments: [{ view: this.opaqueColorView, loadOp: 'load', storeOp: 'store' }],
+                    depthStencilAttachment: { view: this.opaqueDepthView, depthLoadOp: 'load', depthStoreOp: 'store' }
+                });
+                storePass.setPipeline(this.ppllStorePipeline);
+                storePass.setBindGroup(0, this.frameBindGroup);
+                storePass.setBindGroup(2, this.storageBindGroup);
+                for (const mesh of this.transparentMeshes) {
+                    storePass.setVertexBuffer(0, mesh.vertexBuffer);
+                    storePass.setIndexBuffer(mesh.indexBuffer, 'uint32');
+                    storePass.setBindGroup(1, mesh.materialBindGroup);
+                    storePass.drawIndexed(mesh.indexCount);
+                }
+                storePass.end();
+
+                const resolvePass = encoder.beginRenderPass({
+                    colorAttachments: [{ view: currentView, clearValue: { r: 0, g: 0, b: 0, a: 1 }, loadOp: 'clear', storeOp: 'store' }],
+                    timestampWrites: this.getTimestampWrites(gpuTimingActive, false, true)
+                });
+                resolvePass.setPipeline(this.resolvePipeline);
+                resolvePass.setBindGroup(0, this.resolveFrameBindGroup);
+                resolvePass.setBindGroup(1, this.storageBindGroup);
+                resolvePass.draw(3);
+                resolvePass.end();
+                this.requestCounterReadback(encoder);
+            }
+
+            render() {
+                const frameStart = performance.now();
+                const mode = getTransparencyMode();
+                if (this.performanceMode !== mode) this.resetPerformanceMetrics(mode);
+
+                this.resize();
+                this.updateFrameBuffer();
+                const encoder = this.device.createCommandEncoder();
+                const currentView = this.context.getCurrentTexture().createView();
+                const gpuTimingActive = this.beginGpuTiming(encoder);
+
+                if (mode === 'ppll') {
+                    this.renderPpll(encoder, currentView, gpuTimingActive);
+                } else if (mode === 'weighted') {
+                    this.renderWeightedOit(encoder, currentView, gpuTimingActive);
+                } else {
+                    this.renderConventional(encoder, currentView, gpuTimingActive);
+                }
+
+                this.endGpuTiming(encoder, gpuTimingActive);
+                this.device.queue.submit([encoder.finish()]);
+                this.updatePerformanceMetrics(frameStart, performance.now() - frameStart);
+                this.finishCounterReadback();
+                this.finishGpuTiming();
+            }
+        }
+
+        function createBabylonMaterial(name, color, alpha) {
+            const material = new BABYLON.StandardMaterial(name, babylonScene);
+            material.diffuseColor = new BABYLON.Color3(color[0], color[1], color[2]);
+            material.alpha = alpha;
+            material.metadata = { ...(material.metadata || {}), baseAlpha: alpha };
+            material.backFaceCulling = false;
+            material.specularColor = new BABYLON.Color3(0.08, 0.08, 0.08);
+            return material;
+        }
+
+        function clearBabylonObjects() {
+            if (currentObjectRoot) {
+                currentObjectRoot.dispose(false, true);
+                currentObjectRoot = null;
+            }
+            transparentMeshes.length = 0;
+        }
+
+        function createDefaultBabylonSceneObjects() {
+            clearBabylonObjects();
+            currentObjectRoot = new BABYLON.TransformNode('DefaultRoot', babylonScene);
+
+            const wall = BABYLON.MeshBuilder.CreatePlane('Wall', { size: 10 }, babylonScene);
+            wall.position.z = -2;
+            wall.material = createBabylonMaterial('Wall Material', [0.55, 0.55, 0.55], 1);
+            wall.parent = currentObjectRoot;
+
+            const grid = BABYLON.MeshBuilder.CreateGround('Grid', { width: 10, height: 10, subdivisions: 10 }, babylonScene);
+            grid.position.y = -1.5;
+            grid.material = createBabylonMaterial('Grid Material', [0.22, 0.22, 0.22], 1);
+            grid.parent = currentObjectRoot;
+
+            const cube = BABYLON.MeshBuilder.CreateBox('Blue Cube', { size: 1.5 }, babylonScene);
+            cube.position.set(0.5, 0, -0.5);
+            cube.material = createBabylonMaterial('Blue Cube Material', [0, 0.33, 1], 0.6);
+            cube.parent = currentObjectRoot;
+            transparentMeshes.push(cube);
+
+            const sphere = BABYLON.MeshBuilder.CreateSphere('Red Sphere', { diameter: 2, segments: 32 }, babylonScene);
+            sphere.position.set(-0.5, 0.2, 0.8);
+            sphere.material = createBabylonMaterial('Red Sphere Material', [1, 0.07, 0.07], 0.6);
+            sphere.parent = currentObjectRoot;
+            transparentMeshes.push(sphere);
+        }
+
+        function applyBabylonSettings() {
+            const rawEnabled = isRawRendererEnabled();
+            const oitEnabled = isOitModeEnabled();
+            const multiplier = getAlphaMultiplier();
+            alphaMultiplierValue.textContent = multiplier.toFixed(2);
+            syncPanelState();
+            depthWriteToggle.disabled = oitEnabled;
+            document.querySelectorAll('input[name="drawOrder"]').forEach((radio) => radio.disabled = oitEnabled);
+            babylonCanvas.style.display = rawEnabled ? 'none' : 'block';
+            ppllCanvas.style.display = rawEnabled ? 'block' : 'none';
+
+            transparentMeshes.forEach((mesh) => {
+                if (mesh.material) {
+                    const metadata = mesh.material.metadata || {};
+                    const baseAlpha = metadata.baseAlpha ?? mesh.material.alpha ?? 1;
+                    mesh.material.metadata = { ...metadata, baseAlpha };
+                    mesh.material.alpha = clamp(baseAlpha * multiplier, 0, 1);
+                    mesh.material.disableDepthWrite = !depthWriteToggle.checked;
+                }
+            });
+
+            if (currentMeshMode === 'default' && transparentMeshes.length >= 2) {
+                const drawOrder = document.querySelector('input[name="drawOrder"]:checked').value;
+                if (drawOrder === 'correct') {
+                    transparentMeshes[0].alphaIndex = 0;
+                    transparentMeshes[1].alphaIndex = 1;
+                } else {
+                    transparentMeshes[1].alphaIndex = 0;
+                    transparentMeshes[0].alphaIndex = 1;
+                }
+            }
+
+            if (rawRenderer) {
+                rawRenderer.updateAlphaMultiplier();
+                if (rawEnabled) rawRenderer.resize(true);
+                rawRenderer.updateStatus();
+            }
+        }
+
+        function getMaterialBaseAlpha(material) {
+            let alpha = material?.alpha ?? 1;
+            if (material?.albedoColor && typeof material.albedoColor.a === 'number') alpha *= material.albedoColor.a;
+            return alpha >= 1 ? 0.6 : alpha;
+        }
+
+        function extractColorAlpha(material) {
+            if (!material) return [1, 1, 1, 0.6];
+
+            const color = material.albedoColor || material.diffuseColor || material.emissiveColor || new BABYLON.Color3(1, 1, 1);
+            const alpha = material.metadata?.baseAlpha ?? getMaterialBaseAlpha(material);
+            return [color.r ?? 1, color.g ?? 1, color.b ?? 1, alpha];
+        }
+
+        function extractMeshesFromBabylon(meshes) {
+            const extracted = [];
+            const allPositions = [];
+
+            meshes.forEach((mesh) => {
+                const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+                const normals = mesh.getVerticesData(BABYLON.VertexBuffer.NormalKind);
+                const indices = mesh.getIndices();
+                if (!positions || !normals || !indices || !mesh.material) return;
+
+                mesh.computeWorldMatrix(true);
+                const world = mesh.getWorldMatrix();
+                const transformedPositions = [];
+                const transformedNormals = [];
+
+                for (let i = 0; i < positions.length; i += 3) {
+                    const p = BABYLON.Vector3.TransformCoordinates(new BABYLON.Vector3(positions[i], positions[i + 1], positions[i + 2]), world);
+                    const n = BABYLON.Vector3.TransformNormal(new BABYLON.Vector3(normals[i], normals[i + 1], normals[i + 2]), world).normalize();
+                    transformedPositions.push(p.x, p.y, p.z);
+                    transformedNormals.push(n.x, n.y, n.z);
+                    allPositions.push(p.x, p.y, p.z);
+                }
+
+                extracted.push({
+                    name: mesh.name,
+                    color: extractColorAlpha(mesh.material),
+                    positions: transformedPositions,
+                    normals: transformedNormals,
+                    indices: new Uint32Array(indices)
+                });
+            });
+
+            if (!allPositions.length) return { opaque: [], transparent: [] };
+
+            const min = [Infinity, Infinity, Infinity];
+            const max = [-Infinity, -Infinity, -Infinity];
+            for (let i = 0; i < allPositions.length; i += 3) {
+                min[0] = Math.min(min[0], allPositions[i]); min[1] = Math.min(min[1], allPositions[i + 1]); min[2] = Math.min(min[2], allPositions[i + 2]);
+                max[0] = Math.max(max[0], allPositions[i]); max[1] = Math.max(max[1], allPositions[i + 1]); max[2] = Math.max(max[2], allPositions[i + 2]);
+            }
+            const center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
+            const largestExtent = Math.max(max[0] - min[0], max[1] - min[1], max[2] - min[2]) || 1;
+            const scale = largestExtent > 4 ? 4 / largestExtent : 1;
+
+            return {
+                opaque: [],
+                transparent: extracted.map((mesh) => {
+                    for (let i = 0; i < mesh.positions.length; i += 3) {
+                        mesh.positions[i] = (mesh.positions[i] - center[0]) * scale;
+                        mesh.positions[i + 1] = (mesh.positions[i + 1] - center[1]) * scale;
+                        mesh.positions[i + 2] = (mesh.positions[i + 2] - center[2]) * scale;
+                    }
+                    return {
+                        name: mesh.name,
+                        color: mesh.color,
+                        geometry: { vertices: interleaveGeometry(mesh.positions, mesh.normals), indices: mesh.indices }
+                    };
+                })
+            };
+        }
+
+        async function loadGlbFile(file) {
+            setStatus(`Loading ${file.name}...`);
+            clearBabylonObjects();
+            currentMeshMode = 'custom';
+            currentObjectRoot = new BABYLON.TransformNode('LoadedRoot', babylonScene);
+
+            try {
+                const result = await BABYLON.SceneLoader.ImportMeshAsync('', '', file, babylonScene);
+                const importedMeshes = result.meshes.filter((mesh) => mesh.getTotalVertices && mesh.getTotalVertices() > 0);
+                currentSceneLabel = file.name;
+
+                importedMeshes.forEach((mesh) => {
+                    mesh.parent = currentObjectRoot;
+                    if (mesh.material) {
+                        const baseAlpha = getMaterialBaseAlpha(mesh.material);
+                        mesh.material.alpha = baseAlpha;
+                        mesh.material.metadata = { ...(mesh.material.metadata || {}), baseAlpha };
+                        mesh.material.backFaceCulling = false;
+                        mesh.material.disableDepthWrite = !depthWriteToggle.checked;
+                    }
+                    transparentMeshes.push(mesh);
+                });
+
+                const bounds = currentObjectRoot.getHierarchyBoundingVectors(true);
+                const center = bounds.min.add(bounds.max).scale(0.5);
+                const extent = bounds.max.subtract(bounds.min);
+                const largestExtent = Math.max(extent.x, extent.y, extent.z) || 1;
+                currentObjectRoot.position.subtractInPlace(center);
+                if (largestExtent > 4) currentObjectRoot.scaling.scaleInPlace(4 / largestExtent);
+                currentObjectRoot.computeWorldMatrix(true);
+
+                rawRenderer.setSceneMeshes(extractMeshesFromBabylon(importedMeshes));
+                applyBabylonSettings();
+                rawRenderer.updateStatus();
+            } catch (error) {
+                console.error(error);
+                setStatus(`Failed to load ${file.name}.`);
+            }
+        }
+
+        async function initBabylon() {
+            babylonEngine = new BABYLON.WebGPUEngine(babylonCanvas, { antialias: true });
+            await babylonEngine.initAsync();
+            babylonScene = new BABYLON.Scene(babylonEngine);
+            babylonScene.clearColor = new BABYLON.Color4(0.133, 0.133, 0.133, 1);
+            babylonScene.useRightHandedSystem = true;
+
+            babylonCamera = new BABYLON.ArcRotateCamera('Camera', orbit.alpha, orbit.beta, orbit.radius, BABYLON.Vector3.Zero(), babylonScene);
+            babylonCamera.minZ = 0.1;
+            babylonCamera.maxZ = 100;
+            babylonCamera.fov = 45 * Math.PI / 180;
+            syncBabylonCamera();
+
+            const hemispheric = new BABYLON.HemisphericLight('Ambient', new BABYLON.Vector3(0, 1, 0), babylonScene);
+            hemispheric.intensity = 0.6;
+            const directional = new BABYLON.DirectionalLight('Directional', new BABYLON.Vector3(-5, -10, -7), babylonScene);
+            directional.intensity = 0.8;
+
+            createDefaultBabylonSceneObjects();
+            babylonEngine.runRenderLoop(() => {
+                if (!isRawRendererEnabled()) babylonScene.render();
+            });
+        }
+
+        function resetDefaultScene() {
+            currentMeshMode = 'default';
+            currentSceneLabel = 'Default scene';
+            fileInput.value = '';
+            createDefaultBabylonSceneObjects();
+            rawRenderer.setSceneMeshes(getDefaultRawMeshes());
+            applyBabylonSettings();
+        }
+
+        async function init() {
+            try {
+                await initBabylon();
+                rawRenderer = new OitLabRenderer(ppllCanvas);
+                await rawRenderer.init();
+                rawRenderer.setSceneMeshes(getDefaultRawMeshes());
+                attachOrbitControls(babylonCanvas);
+                attachOrbitControls(ppllCanvas);
+                applyBabylonSettings();
+
+                function renderRawLoop(timestamp) {
+                    updateAutoRotate(timestamp);
+                    if (isRawRendererEnabled()) rawRenderer.render();
+                    requestAnimationFrame(renderRawLoop);
+                }
+                renderRawLoop();
+
+                window.addEventListener('resize', () => {
+                    babylonEngine.resize();
+                    rawRenderer.resize(true);
+                });
+                depthWriteToggle.addEventListener('change', applyBabylonSettings);
+                autoRotateToggle.addEventListener('change', () => { lastAutoRotateTime = 0; });
+                conventionalToggle.addEventListener('change', applyBabylonSettings);
+                weightedOitToggle.addEventListener('change', () => {
+                    if (weightedOitToggle.checked) ppllToggle.checked = false;
+                    applyBabylonSettings();
+                });
+                ppllToggle.addEventListener('change', () => {
+                    if (ppllToggle.checked) weightedOitToggle.checked = false;
+                    applyBabylonSettings();
+                });
+                alphaMultiplier.addEventListener('input', applyBabylonSettings);
+                nodeBudget.addEventListener('input', () => {
+                    nodeBudgetValue.textContent = nodeBudget.value;
+                    rawRenderer.resize(true);
+                });
+                document.querySelectorAll('input[name="drawOrder"]').forEach((radio) => radio.addEventListener('change', applyBabylonSettings));
+                fileInput.addEventListener('change', (event) => {
+                    const file = event.target.files[0];
+                    if (file) loadGlbFile(file);
+                });
+                resetBtn.addEventListener('click', resetDefaultScene);
+
+                if (fileInput.files[0]) {
+                    loadGlbFile(fileInput.files[0]);
+                }
+            } catch (error) {
+                console.error(error);
+                setStatus(error.message || String(error));
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
